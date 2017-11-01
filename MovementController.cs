@@ -1,5 +1,6 @@
-﻿ using System;
+﻿using System.Collections.Generic;
 using UnityEngine;
+
 public class MovementController : MonoBehaviour
 {
     public float TurnForceMultiplier;
@@ -27,61 +28,53 @@ public class MovementController : MonoBehaviour
     private Vector3 _prevPos;
     private Vector3 _prevForward;
 
+    private ActiveCarInputProvider _input;
+    private MovementCalculator _calc;
+
     private void Start()
     {
         _rigidbody = GetComponent<Rigidbody>();
         Gear = Gear.N;
         _prevPos = transform.position;
+
+        _calc = new MovementCalculator();
+
+        var gameController = GameObject.FindGameObjectWithTag("GameController");
+        _input = gameController.GetComponent<ActiveCarInputProvider>();
     }
     void Update()
     {
         var movement = (transform.position - _prevPos);
 
-        Vector3 currentVelocity = GetVelocity(transform.position, _prevPos);
+        Vector3 currentVelocity = _calc.GetVelocity(transform.position, _prevPos);
 
-        float currentForwardSpeed = GetCurrentForwardSpeed(currentVelocity);
-        var currentForwardDir = GetCurrentForwardDir(_prevForward, movement);
+        float currentForwardSpeed = _calc.GetCurrentForwardSpeed(currentVelocity);
+        var currentForwardDir = _calc.GetCurrentForwardDir(_prevForward, movement);
 
         ChangeGear();
         if (Gear != Gear.N)
             Move(currentForwardSpeed);
 
-        //if (currentForwardSpeed >= MinTurningSpeed)
-            Rotate(currentForwardDir, currentForwardSpeed);
+        Rotate(currentForwardDir, currentForwardSpeed);
     }
     private void LateUpdate()
     {
         _prevPos = transform.position;
         _prevForward = transform.forward;
     }
-    private Vector3 GetVelocity(Vector3 currentPos, Vector3 prevPos)
-    {
-        float x = (currentPos.x - prevPos.x) / Time.deltaTime;
-        float y = (currentPos.y - prevPos.y) / Time.deltaTime;
-        float z = (currentPos.z - prevPos.z) / Time.deltaTime;
-        return new Vector3(x, y, z);
-    }
+    
     private void ChangeGear()
     {
         int currentGear = (int)Gear;
-        if (Input.GetButtonDown("GearUp") && Gear != MaxGear)
+        if (_input.GearUp && Gear != MaxGear)
             currentGear++;
-        else if (Input.GetButtonDown("GearDown") && Gear != MinGear)
+        else if (_input.GearDown && Gear != MinGear)
             currentGear--;
         Gear = (Gear)currentGear;
     }
-    private float GetCurrentForwardDir(Vector3 prevForward, Vector3 movement)
-    {
-        return Vector3.Dot(prevForward, movement);
-    }
-    private float GetCurrentForwardSpeed(Vector3 currentVelocity)
-    {
-        return Mathf.Abs(currentVelocity.z);
-    }
     private void Move(float currentForwardSpeed)
     {
-        var verticalInput = Input.GetAxis("Vertical");
-        if (verticalInput > 0)
+        if (_input.AccelerateAxis > 0)
         {
             float accel = GetAccel();
 
@@ -96,24 +89,14 @@ public class MovementController : MonoBehaviour
     }
     private void Rotate(float currentForwardDir, float currentForwardSpeed)
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        var force = CalculateRotationForce(new RotateForceCalcModel()
+        var force = _calc.CalculateRotationForce(new RotateForceCalcModel()
         {
-            HorizontalInput = horizontalInput,
+            HorizontalInput = _input.TurnAxis,
             CurrentForwardSpeed = currentForwardSpeed,
             TurnForceMultiplier = TurnForceMultiplier,
             CurrentForwardDir = currentForwardDir
         });
         transform.Rotate(Vector3.up * Time.deltaTime * force, Space.World);
-    }
-    private float CalculateRotationForce(RotateForceCalcModel model)
-    {
-        var speedMultiplier = model.TurnForceMultiplier
-            //model.CurrentForwardSpeed 
-            //* 
-            ;
-        var force = speedMultiplier * model.HorizontalInput * model.CurrentForwardDir;
-        return force;
     }
     private bool IsMaxSpeedReached(float currentSpeed)
     {
@@ -150,4 +133,3 @@ public class MovementController : MonoBehaviour
         return 0;
     }
 }
-public enum Gear { R = -1, N = 0, First = 1, Second = 2, Third = 3, Fourth = 4 };
