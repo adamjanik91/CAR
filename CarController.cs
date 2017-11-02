@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-
 public class CarController : VehicleController
 {
     public Gear Gear;
@@ -21,7 +20,26 @@ public class CarController : VehicleController
     public override void Start()
     {
         base.Start();
+        TurnForceMultiplier = 750;
         Gear = Gear.N;
+        MaxGear = Gear.Fourth;
+        MinGear = Gear.R;
+        MaxSpeedRevGear = 5;
+        MaxSpeed1stGear = 5;
+        MaxSpeed2ndGear = 10;
+        MaxSpeed3rdGear = 17;
+        MaxSpeed4thGear = 16;
+        TopSpeed = MaxSpeed4thGear;
+        MinTurningSpeed = GetMinTurningSpeed(TopSpeed);
+        AccelRevGear = 19;
+        Accel1stGear = 20;
+        Accel2ndGear = 18;
+        Accel3rdGear = 17;
+        Accel4thGear = 16;
+    }
+    private float GetMinTurningSpeed(float topSpeed)
+    {
+        return topSpeed * -1;
     }
     public override void Update()
     {

@@ -37,6 +37,17 @@ public class ActiveCarInputProvider : MonoBehaviour
 
     [SerializeField]
     private string _handBrakeAxisName;
+
+    public ActiveCarInputProvider()
+    {
+        _accelerateAxisName = null;
+        _brakeAxisName = null;
+        _clutchAxisName = null;
+        _gearUpName = null;
+        _gearDownName = null;
+        _turnAxisName = null;
+        _handBrakeAxisName = null;
+    }
     private void Update()
     {
         AccelerateAxis = GetAxis(_accelerateAxisName);
