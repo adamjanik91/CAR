@@ -6,22 +6,24 @@ public class CarController : VehicleController
     public Gear MinGear;
 
     public float MaxSpeedRevGear;
+    public float MaxSpeedNGear;
     public float MaxSpeed1stGear;
     public float MaxSpeed2ndGear;
     public float MaxSpeed3rdGear;
     public float MaxSpeed4thGear;
 
     public float AccelRevGear;
+    public float AccelNGear;
     public float Accel1stGear;
     public float Accel2ndGear;
     public float Accel3rdGear;
     public float Accel4thGear;
 
-    public override void Start()
+    public CarController()
     {
-        base.Start();
         TurnForceMultiplier = 750;
         Gear = Gear.N;
+        MaxSpeedNGear = 0f;
         MaxGear = Gear.Fourth;
         MinGear = Gear.R;
         MaxSpeedRevGear = 5;
@@ -30,16 +32,23 @@ public class CarController : VehicleController
         MaxSpeed3rdGear = 17;
         MaxSpeed4thGear = 16;
         TopSpeed = MaxSpeed4thGear;
-        MinTurningSpeed = GetMinTurningSpeed(TopSpeed);
+        MaxSpeed = GetMaxSpeed(Gear.First);
+        MinTurningSpeed = GetMinTurningSpeed(MaxSpeed);
         AccelRevGear = 19;
+        AccelNGear = 1;
         Accel1stGear = 20;
         Accel2ndGear = 18;
         Accel3rdGear = 17;
         Accel4thGear = 16;
     }
-    private float GetMinTurningSpeed(float topSpeed)
+
+    public override void Start()
     {
-        return topSpeed * -1;
+        base.Start();
+    }
+    private float GetMinTurningSpeed(float maxSpeed)
+    {
+        return maxSpeed * -1;
     }
     public override void Update()
     {
@@ -53,10 +62,15 @@ public class CarController : VehicleController
         var currentForwardDir = _calc.GetCurrentForwardDir(_prevForward, movement);
 
         ChangeGear();
-        if (Gear != Gear.N)
-            Move(currentForwardSpeed);
+
+        Move(currentForwardSpeed, currentForwardDir);
 
         Rotate(currentForwardDir, currentForwardSpeed);
+    }
+    public override void LateUpdate()
+    {
+        base.LateUpdate();
+        MaxSpeedNGear = GetMaxSpeed(Gear);
     }
     private void ChangeGear()
     {
@@ -67,21 +81,19 @@ public class CarController : VehicleController
             currentGear--;
         Gear = (Gear)currentGear;
     }
-    private void Move(float currentForwardSpeed)
+    private void Move(float currentForwardSpeed, float currentForwardDir)
     {
-        if (_input.AccelerateAxis > 0)
-        {
-            float accel = GetAccel();
+        float accel = GetAccel(_input.AccelerateAxis);
 
-            float maxSpeed = GetCurrentMaxSpeed(Gear);
-            bool maxSpeedReached = IsMaxSpeedReached(currentForwardSpeed, maxSpeed);
+        int currentGear = (int)Gear;
+        if (Gear != Gear.N)
+            currentForwardDir = (currentGear >= 0) ? 1 : -1;
 
-            int currentGear = (int)Gear;
-            int gearDir = (currentGear > 0) ? 1 : -1;
+        float maxSpeed = GetMaxSpeed(Gear);
+        bool maxSpeedReached = IsMaxSpeedReached(currentForwardSpeed, maxSpeed);
 
-            if (maxSpeedReached == false && currentGear != 0)
-                _rigidbody.AddForce(transform.forward * accel * gearDir);
-        }
+        if (maxSpeedReached == false || Gear == Gear.N) //to change
+            _rigidbody.AddForce(transform.forward * accel * currentForwardDir);
     }
     private void Rotate(float currentForwardDir, float currentForwardSpeed)
     {
@@ -94,12 +106,12 @@ public class CarController : VehicleController
         });
         transform.Rotate(Vector3.up * Time.deltaTime * force, Space.World);
     }
-    private float GetCurrentMaxSpeed(Gear gear)
+    private float GetMaxSpeed(Gear gear)
     {
         switch (gear)
         {
             case Gear.R: return MaxSpeedRevGear;
-            case Gear.N: return TopSpeed;
+            case Gear.N: return MaxSpeedNGear;
             case Gear.First: return MaxSpeed1stGear;
             case Gear.Second: return MaxSpeed2ndGear;
             case Gear.Third: return MaxSpeed3rdGear;
@@ -115,22 +127,23 @@ public class CarController : VehicleController
     {
         return (currentSpeed >= topSpeed) ? true : false;
     }
-    private float GetAccel()
+    private float GetAccel(float inputAccel)
     {
+        inputAccel = (inputAccel == 0) ? 0f : inputAccel / Mathf.Abs(inputAccel);
         switch (Gear)
         {
             case Gear.R:
-                return AccelRevGear;
+                return AccelRevGear * inputAccel;
             case Gear.N:
-                break;
+                return AccelNGear;
             case Gear.First:
-                return Accel1stGear;
+                return Accel1stGear * inputAccel;
             case Gear.Second:
-                return Accel2ndGear;
+                return Accel2ndGear * inputAccel;
             case Gear.Third:
-                return Accel3rdGear;
+                return Accel3rdGear * inputAccel;
             case Gear.Fourth:
-                return Accel4thGear;
+                return Accel4thGear * inputAccel;
         }
         return 0;
     }

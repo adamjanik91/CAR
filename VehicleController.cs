@@ -4,6 +4,8 @@ public class VehicleController : MonoBehaviour
     public float TurnForceMultiplier;
     public float MinTurningSpeed;
     [HideInInspector]
+    public float MaxSpeed;
+    [HideInInspector]
     public float TopSpeed;
     [HideInInspector]
     public float Accel;
