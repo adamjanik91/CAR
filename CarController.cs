@@ -1,13 +1,10 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class MovementController : MonoBehaviour
+public class CarController : VehicleController
 {
-    public float TurnForceMultiplier;
-
     public Gear Gear;
-
-    public float MinTurningSpeed;
+    public Gear MaxGear;
+    public Gear MinGear;
 
     public float MaxSpeedRevGear;
     public float MaxSpeed1stGear;
@@ -21,29 +18,15 @@ public class MovementController : MonoBehaviour
     public float Accel3rdGear;
     public float Accel4thGear;
 
-    public Gear MaxGear;
-    public Gear MinGear;
-
-    private Rigidbody _rigidbody;
-    private Vector3 _prevPos;
-    private Vector3 _prevForward;
-
-    private ActiveCarInputProvider _input;
-    private MovementCalculator _calc;
-
-    private void Start()
+    public override void Start()
     {
-        _rigidbody = GetComponent<Rigidbody>();
+        base.Start();
         Gear = Gear.N;
-        _prevPos = transform.position;
-
-        _calc = new MovementCalculator();
-
-        var gameController = GameObject.FindGameObjectWithTag("GameController");
-        _input = gameController.GetComponent<ActiveCarInputProvider>();
     }
-    void Update()
+    public override void Update()
     {
+        base.Update();
+
         var movement = (transform.position - _prevPos);
 
         Vector3 currentVelocity = _calc.GetVelocity(transform.position, _prevPos);
@@ -57,12 +40,6 @@ public class MovementController : MonoBehaviour
 
         Rotate(currentForwardDir, currentForwardSpeed);
     }
-    private void LateUpdate()
-    {
-        _prevPos = transform.position;
-        _prevForward = transform.forward;
-    }
-    
     private void ChangeGear()
     {
         int currentGear = (int)Gear;
@@ -78,7 +55,8 @@ public class MovementController : MonoBehaviour
         {
             float accel = GetAccel();
 
-            bool maxSpeedReached = IsMaxSpeedReached(currentForwardSpeed);
+            float maxSpeed = GetCurrentMaxSpeed(Gear);
+            bool maxSpeedReached = IsMaxSpeedReached(currentForwardSpeed, maxSpeed);
 
             int currentGear = (int)Gear;
             int gearDir = (currentGear > 0) ? 1 : -1;
@@ -98,20 +76,26 @@ public class MovementController : MonoBehaviour
         });
         transform.Rotate(Vector3.up * Time.deltaTime * force, Space.World);
     }
-    private bool IsMaxSpeedReached(float currentSpeed)
+    private float GetCurrentMaxSpeed(Gear gear)
     {
-        if (Gear == Gear.R && currentSpeed < MaxSpeedRevGear)
-            return false;
-        else if (Gear == Gear.First && currentSpeed < MaxSpeed1stGear)
-            return false;
-        else if (Gear == Gear.Second && currentSpeed < MaxSpeed2ndGear)
-            return false;
-        else if (Gear == Gear.Third && currentSpeed < MaxSpeed3rdGear)
-            return false;
-        else if (Gear == Gear.Fourth && currentSpeed < MaxSpeed4thGear)
-            return false;
-
-        return true;
+        switch (gear)
+        {
+            case Gear.R: return MaxSpeedRevGear;
+            case Gear.N: return TopSpeed;
+            case Gear.First: return MaxSpeed1stGear;
+            case Gear.Second: return MaxSpeed2ndGear;
+            case Gear.Third: return MaxSpeed3rdGear;
+            case Gear.Fourth: return MaxSpeed4thGear;
+            default: return 0.0f;
+        }
+    }
+    private bool IsMaxSpeedReached(float currentSpeed, float maxSpeed)
+    {
+        return (currentSpeed >= maxSpeed) ? true : false;
+    }
+    private bool IsTopSpeedReached(float currentSpeed, float topSpeed)
+    {
+        return (currentSpeed >= topSpeed) ? true : false;
     }
     private float GetAccel()
     {
