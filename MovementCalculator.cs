@@ -16,10 +16,4 @@ public class MovementCalculator
     {
         return Vector3.Dot(prevForward, movement);
     }
-    public float CalculateRotationForce(RotateForceCalcModel model)
-    {
-        var speedMultiplier = model.TurnForceMultiplier;
-        var force = speedMultiplier * model.HorizontalInput * model.CurrentForwardDir;
-        return force;
-    }
 }

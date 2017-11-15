@@ -21,7 +21,7 @@ public class CarController : VehicleController
 
     public CarController()
     {
-        TurnForceMultiplier = 750;
+        TurnForceMultiplier = 50;
         Gear = Gear.N;
         MaxSpeedNGear = 0f;
         MaxGear = Gear.Fourth;
@@ -65,7 +65,9 @@ public class CarController : VehicleController
 
         Move(currentForwardSpeed, currentForwardDir);
 
-        Rotate(currentForwardDir, currentForwardSpeed);
+        float multiplier = TurnForceMultiplier * _input.TurnAxis * currentForwardDir;
+        Vector3 eulerAngles = Vector3.up * multiplier;
+        Rotate(eulerAngles);
     }
     public override void LateUpdate()
     {
@@ -95,16 +97,9 @@ public class CarController : VehicleController
         if (maxSpeedReached == false || Gear == Gear.N) //to change
             _rigidbody.AddForce(transform.forward * accel * currentForwardDir);
     }
-    private void Rotate(float currentForwardDir, float currentForwardSpeed)
+    private void Rotate(Vector3 eulerAngles)
     {
-        var force = _calc.CalculateRotationForce(new RotateForceCalcModel()
-        {
-            HorizontalInput = _input.TurnAxis,
-            CurrentForwardSpeed = currentForwardSpeed,
-            TurnForceMultiplier = TurnForceMultiplier,
-            CurrentForwardDir = currentForwardDir
-        });
-        transform.Rotate(Vector3.up * Time.deltaTime * force, Space.World);
+        transform.Rotate(eulerAngles, Space.World);
     }
     private float GetMaxSpeed(Gear gear)
     {

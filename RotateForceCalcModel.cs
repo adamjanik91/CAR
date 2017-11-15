@@ -1,7 +1,7 @@
-﻿public class RotateForceCalcModel
+﻿using UnityEngine;
+public class GenerateRotationEulerAnglesModel
 {
-    public float HorizontalInput { get; set; }
-    public float CurrentForwardSpeed { get; set; }
+    public Vector3 RotationVector { get; set; }
     public float TurnForceMultiplier { get; set; }
     public float CurrentForwardDir { get; set; }
 }
